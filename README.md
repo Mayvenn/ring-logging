@@ -1,3 +1,22 @@
-# ring-logging
+#ring-logging
+A Ring middleware for logging requests and responses
 
-Logs ring requests and responses as middleware
+##Referencing in Leiningen
+```Clojure
+[ring-logging "0.1.1"]
+```
+
+##Primary Namespace
+```Clojure
+ring-logging.core
+```
+
+##Example
+```Clojure
+(->
+   ...
+   (make-logger-middleware logger)
+   ...)
+```
+
+
