@@ -13,10 +13,12 @@ ring-logging.core
 
 ##Example
 ```Clojure
-(->
-   ...
-   (make-logger-middleware logger)
-   ...)
+(defn wrap-api [routes logger]
+  (-> routes
+      ring-logging/wrap-request-timing
+      (ring-logging/wrap-logging logger ring-logging/simple-inbound-config)
+      wrap-json-response
+      (wrap-json-body {:keywords? true})
+      ring-logging/wrap-trace-request
+      (wrap-defaults api-defaults)))
 ```
-
-
