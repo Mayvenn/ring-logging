@@ -1,29 +1,5 @@
 (ns ring-logging.core)
 
-(defprotocol DeepSelectKeys
-  (-deep-select-keys [ks m]))
-
-(extend-protocol DeepSelectKeys
-  clojure.lang.Keyword
-  (-deep-select-keys [k m]
-    (when-let [value (get m k)]
-      {k value}))
-  java.lang.String
-  (-deep-select-keys [s m]
-    (when-let [value (get m s)]
-      {s value}))
-  clojure.lang.APersistentVector
-  (-deep-select-keys [ks m]
-    (into (array-map)
-          (for [k ks]
-            (-deep-select-keys k m))))
-  clojure.lang.APersistentMap
-  (-deep-select-keys [km m]
-    (into (array-map)
-          (for [[k ks] km]
-            (when-let [value (-deep-select-keys ks (get m k))]
-              [k value])))))
-
 (defn deep-select-keys
   "A utility function for filtering requests and responses.  Behaves
   like select-keys, but with arbitrary nesting. When a value is missing
@@ -62,8 +38,20 @@
      :headers {\"Location\" \"http://elsewhere.com\"}
      :body    {:number 25}}
   ```"
-  [m ks]
-  (-deep-select-keys ks m))
+  [m x]
+  (cond
+    (or (keyword? x)
+        (symbol? x)
+        (string? x)) (when-let [value (get m x)]
+                       {x value})
+    (map? x)         (into (array-map)
+                           (for [[k v] x]
+                             (when-let [value (deep-select-keys (get m k) v)]
+                               [k value])))
+    (coll? x)        (into (array-map)
+                           (for [v x]
+                             (deep-select-keys m v)))
+    :else            nil))
 
 ;; Helpers for transforming and formatting requests and responses
 
@@ -113,7 +101,11 @@
    :txfm-resp   txfm-resp
    :format-resp pr-resp})
 
-; Wrappers useful for logging requests and responses.
+;; Wrappers useful for logging requests and responses.
+
+(defn- system-millis []
+  #?(:clj (System/currentTimeMillis)
+     :cljs (.getTime (js/Date.))))
 
 (defn wrap-request-timing
   "Middleware that times the request, putting the total time (in
@@ -123,15 +115,23 @@
   execute later than wrap-logging."
   [handler]
   (fn [req]
-    (let [start (System/currentTimeMillis)
+    (let [start (system-millis)
           resp (handler req)]
-      (assoc resp :request-time (- (System/currentTimeMillis) start)))))
+      (assoc resp :request-time (- (system-millis) start)))))
+
+(defn trace
+  "Returns a 4 character string of random hex digits"
+  []
+  (let [i (rand-int 0x10000)]
+    #?(:clj
+       (format "%04x" i)
+       :cljs
+       (.slice (str "0000" (.toString i 16)) -4))))
 
 (defn extend-trace [prior]
-  (let [next (format "%04x" (rand-int 0x10000))]
-    (if prior
-      (str prior "." next)
-      next)))
+  (if prior
+    (str prior "." (trace))
+    (trace)))
 
 (defn wrap-trace-request
   "Middleware that adds an id (4 hex digits) into the request, at the
