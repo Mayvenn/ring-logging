@@ -1,4 +1,4 @@
-(defproject ring-logging "0.2.1"
+(defproject ring-logging "0.2.2-SNAPSHOT"
   :description "Logs ring requests and responses"
   :url "https://github.com/Mayvenn/ring-logging"
   :license {:name "Eclipse Public License"
