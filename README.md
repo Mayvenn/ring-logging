@@ -2,9 +2,7 @@
 A Ring middleware for logging requests and responses
 
 ##Referencing in Leiningen
-```Clojure
-[ring-logging "0.1.1"]
-```
+[![Clojars](https://img.shields.io/clojars/v/ring-logging.svg)](https://clojars.org/ring-logging)
 
 ##Primary Namespace
 ```Clojure
