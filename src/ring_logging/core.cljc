@@ -115,9 +115,9 @@
   execute later than wrap-logging."
   [handler]
   (fn [req]
-    (let [start (system-millis)
-          resp (handler req)]
-      (assoc resp :request-time (- (system-millis) start)))))
+    (let [start (system-millis)]
+      (when-let [resp (handler req)]
+        (assoc resp :request-time (- (system-millis) start))))))
 
 (defn trace
   "Returns a 4 character string of random hex digits"
@@ -169,6 +169,6 @@
    (fn [req]
      (let [txfmed-req (txfm-req req)]
        (logger :info (format-req txfmed-req))
-       (let [resp (handler req)]
+       (when-let [resp (handler req)]
          (logger :info (format-resp txfmed-req (txfm-resp resp)))
          resp)))))
