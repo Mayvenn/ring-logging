@@ -1,4 +1,5 @@
-(ns ring-logging.core)
+(ns ring-logging.core
+  (:require [clojure.string :as str]))
 
 (defn deep-select-keys
   "A utility function for filtering requests and responses.  Behaves
@@ -119,14 +120,23 @@
       (when-let [resp (handler req)]
         (assoc resp :request-time (- (system-millis) start))))))
 
+(defn exp [x n]
+  (reduce * (repeat n x)))
+
+(def trace-radix 36)
+(def trace-length 4)
+(def max-trace-opts (exp trace-radix trace-length))
+(def trace-padding (reduce str (repeat trace-length "0")))
+
 (defn trace
   "Returns a 4 character string of random hex digits"
   []
-  (let [i (rand-int 0x10000)]
+  (let [i (rand-int max-trace-opts)]
     #?(:clj
-       (format "%04x" i)
+       (let [rand-str (Integer/toString i trace-radix)]
+         (subs (str trace-padding rand-str) (max (count rand-str) trace-length)))
        :cljs
-       (.slice (str "0000" (.toString i 16)) -4))))
+       (.slice (str trace-padding (.toString i trace-radix)) (- trace-length)))))
 
 (defn extend-trace [prior]
   (if prior
