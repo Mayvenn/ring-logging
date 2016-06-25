@@ -128,7 +128,7 @@
 (def trace-padding (reduce str (repeat trace-length "0")))
 
 (defn trace
-  "Returns a 4 character string of random hex digits"
+  "Returns a 4 character string of random alphanumeric characters"
   []
   (let [i (rand-int max-trace-opts)]
     #?(:clj
