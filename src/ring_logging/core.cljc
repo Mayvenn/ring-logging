@@ -1,5 +1,4 @@
-(ns ring-logging.core
-  (:require [clojure.string :as str]))
+(ns ring-logging.core)
 
 (defn deep-select-keys
   "A utility function for filtering requests and responses.  Behaves
