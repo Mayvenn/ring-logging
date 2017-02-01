@@ -1,4 +1,6 @@
-(ns ring-logging.core)
+(ns ring-logging.core
+  (:require [clojure.string :as string]
+            [clojure.walk :as walk]))
 
 (defn deep-select-keys
   "A utility function for filtering requests and responses.  Behaves
@@ -85,10 +87,13 @@
   [req resp]
   (str "Finished " (pr-str req) " " (pr-str resp)))
 
+(def default-censor-keys #{"password" "token"})
+
 (def simple-inbound-config
   "A basic configuration for wrap-logging, when receiving requests,
   usually via ring."
-  {:txfm-req    txfm-inbound-req
+  {:censor-keys default-censor-keys
+   :txfm-req    txfm-inbound-req
    :format-req  pr-req
    :txfm-resp   txfm-resp
    :format-resp pr-resp})
@@ -96,7 +101,8 @@
 (def simple-outbound-config
   "A basic configuration for wrap-logging, when making outbound
   requests to other services, usually via clj-http/client."
-  {:txfm-req    txfm-outbound-req
+  {:censor-keys default-censor-keys
+   :txfm-req    txfm-outbound-req
    :format-req  pr-req
    :txfm-resp   txfm-resp
    :format-resp pr-resp})
@@ -118,6 +124,25 @@
     (let [start (system-millis)]
       (when-let [resp (handler req)]
         (assoc resp :request-time (- (system-millis) start))))))
+
+(defn ^:private censor-key? [keys-to-censor k]
+  (some (partial string/includes? (string/lower-case (str k)))
+        keys-to-censor))
+
+(def ^:private redacted "█")
+
+(defn ^:private censor-values [keys-to-censor m]
+  (reduce-kv (fn [result k v]
+               (assoc result
+                      k (if (censor-key? keys-to-censor k) redacted v)))
+             {}
+             m))
+
+(defn ^:private censor-params [keys-to-censor req]
+  (walk/postwalk (fn [form]
+                   (cond->> form
+                     (map? form) (censor-values keys-to-censor)))
+                 req))
 
 (defn exp [x n]
   (reduce * (repeat n x)))
@@ -159,6 +184,9 @@
 (defn wrap-logging
   "Middleware that logs at the start of the request and the end of the response.
   Accepts optional configuration parameters:
+  :param: censor-keys  A set of keys, which if they match (lower-case contain), will
+                       appear in the log but whose values will be redacted.
+                       Default: #{}.
   :param: txfm-req     A function which will transform the request before it is
                        formatted. Useful for filtering sensitive information from the
                        request. Default: identity.
@@ -170,14 +198,16 @@
   :param: format-resp  A function which will format the response. Receives both the
                        request and response as arguments. Default: pr-resp."
   ([handler logger] (wrap-logging handler logger {}))
-  ([handler logger {:keys [txfm-req format-req txfm-resp format-resp]
-                    :or   {txfm-req    identity
+  ([handler logger {:keys [censor-keys txfm-req format-req txfm-resp format-resp]
+                    :or   {censor-keys #{}
+                           txfm-req    identity
                            format-req  pr-req
                            txfm-resp   identity
                            format-resp pr-resp}}]
    (fn [req]
-     (let [txfmed-req (txfm-req req)]
+     (let [txfmed-req (->> req txfm-req (censor-params censor-keys))]
        (logger :info (format-req txfmed-req))
        (when-let [resp (handler req)]
-         (logger :info (format-resp txfmed-req (txfm-resp resp)))
+         (let [txfmed-resp (->> resp txfm-resp (censor-params censor-keys))]
+           (logger :info (format-resp txfmed-req txfmed-resp)))
          resp)))))
