@@ -3,6 +3,5 @@
   :url "https://github.com/Mayvenn/ring-logging"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.7.0"]]
-  :deploy-repositories [["releases" :clojars]]
-  :plugins [[s3-wagon-private "1.1.2"]])
+  :dependencies [[org.clojure/clojure "1.8.0"]]
+  :deploy-repositories [["releases" :clojars]])
