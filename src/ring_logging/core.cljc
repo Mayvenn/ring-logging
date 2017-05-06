@@ -14,7 +14,7 @@
      :url          \"http://google.com\"
      :query-params {:a        \"some\"
                     :password \"safe\"}
-     :headers      {\"Authentcation\" \"safe\"}}
+     :headers      {\"Authentication\" \"safe\"}}
     [:method :url :form-params {:query-params [:a :b]}])
 
   ; =>
