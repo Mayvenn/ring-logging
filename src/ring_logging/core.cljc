@@ -205,9 +205,10 @@
                            txfm-resp   identity
                            format-resp pr-resp}}]
    (fn [req]
-     (let [txfmed-req (->> req txfm-req (censor-params censor-keys))]
+     (let [normalized-censor-keys (->> censor-keys (map string/lower-case) set)
+           txfmed-req (->> req txfm-req (censor-params normalized-censor-keys))]
        (logger :info (format-req txfmed-req))
        (when-let [resp (handler req)]
-         (let [txfmed-resp (->> resp txfm-resp (censor-params censor-keys))]
+         (let [txfmed-resp (->> resp txfm-resp (censor-params normalized-censor-keys))]
            (logger :info (format-resp txfmed-req txfmed-resp)))
          resp)))))
