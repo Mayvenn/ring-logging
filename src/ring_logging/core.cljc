@@ -90,7 +90,7 @@
 (defn json-req
   "A json request format, which converts the request to json."
   [req]
-  (to-json {:status   "Finished"
+  (to-json {:status   "Starting"
             :request  req}))
 
 (defn pr-resp
