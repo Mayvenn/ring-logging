@@ -1,6 +1,11 @@
 (ns ring-logging.core
   (:require [clojure.string :as string]
-            [clojure.walk :as walk]))
+            [clojure.walk :as walk]
+            [cheshire.core :as json]))
+
+(defn to-json [value]
+  #?(:clj (json/generate-string value)
+     :cljs (js/JSON.stringify (clj->js value))))
 
 (defn deep-select-keys
   "A utility function for filtering requests and responses.  Behaves
@@ -82,10 +87,23 @@
   [req]
   (str "Starting " (pr-str req)))
 
+(defn json-req
+  "A json request format, which converts the request to json."
+  [req]
+  (to-json {:status   "Finished"
+            :request  req}))
+
 (defn pr-resp
   "A basic response format, which just uses pr-str on the request and response."
   [req resp]
   (str "Finished " (pr-str req) " " (pr-str resp)))
+
+(defn json-resp
+  "A json response format, which converts the resp and the req to json."
+  [req resp]
+  (to-json {:status   "Finished"
+            :request  req
+            :response resp}))
 
 (def default-censor-keys #{"password" "token"})
 
@@ -106,6 +124,25 @@
    :format-req  pr-req
    :txfm-resp   txfm-resp
    :format-resp pr-resp})
+
+(def json-inbound-config
+  "A basic configuration for wrap-logging, when receiving requests,
+  usually via ring. Logs as json"
+  {:censor-keys default-censor-keys
+   :txfm-req    txfm-inbound-req
+   :format-req  json-req
+   :txfm-resp   txfm-resp
+   :format-resp json-resp})
+
+(def json-outbound-config
+  "A basic configuration for wrap-logging, when making outbound
+  requests to other services, usually via clj-http/client. Logs as json"
+  {:censor-keys default-censor-keys
+   :txfm-req    txfm-outbound-req
+   :format-req  json-req
+   :txfm-resp   txfm-resp
+   :format-resp json-resp})
+
 
 ;; Wrappers useful for logging requests and responses.
 
