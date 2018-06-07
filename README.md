@@ -1,15 +1,15 @@
-#ring-logging
+# ring-logging
 A Ring middleware for logging requests and responses
 
-##Referencing in Leiningen
+## Referencing in Leiningen
 [![Clojars](https://img.shields.io/clojars/v/ring-logging.svg)](https://clojars.org/ring-logging)
 
-##Primary Namespace
+## Primary Namespace
 ```Clojure
 ring-logging.core
 ```
 
-##Example
+## Example
 ```Clojure
 (defn wrap-api [routes logger]
   (-> routes
