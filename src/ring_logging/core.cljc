@@ -1,7 +1,7 @@
 (ns ring-logging.core
   (:require [clojure.string :as string]
             [clojure.walk :as walk]
-            [cheshire.core :as json]))
+            #?(:clj [cheshire.core :as json])))
 
 (defn to-json [value]
   #?(:clj (json/generate-string value)
@@ -19,8 +19,7 @@
      :url          \"http://google.com\"
      :query-params {:a        \"some\"
                     :password \"safe\"}
-     :headers      {\"Authentication\" \"safe\"}}
-    [:method :url :form-params {:query-params [:a :b]}])
+     :headers      {\"Authentication\" \"safe\"}} [:method :url :form-params {:query-params [:a :b]}])
 
   ; =>
     {:method       :get
@@ -93,6 +92,13 @@
   (to-json {:status   "Starting"
             :request  req}))
 
+(defn structured-req
+  "A map request format, which returns structured data"
+  [req]
+  {:domain  "http.ring.logging"
+   :event   "request/started"
+   :request req})
+
 (defn pr-resp
   "A basic response format, which just uses pr-str on the request and response."
   [req resp]
@@ -104,6 +110,14 @@
   (to-json {:status   "Finished"
             :request  req
             :response resp}))
+
+(defn structured-resp
+  "A map response format, which returns structured data"
+  [req resp]
+  {:domain   "http.ring.logging"
+   :event    "request/finished"
+   :request  req
+   :response resp})
 
 (def default-censor-keys #{"password" "token"})
 
@@ -120,7 +134,7 @@
   "A basic configuration for wrap-logging, when making outbound
   requests to other services, usually via clj-http/client."
   {:censor-keys default-censor-keys
-   :txfm-req    txfm-outbound-req
+   :txfm-req    txfm-inbound-req
    :format-req  pr-req
    :txfm-resp   txfm-resp
    :format-resp pr-resp})
@@ -217,6 +231,7 @@
    (fn [req]
      (let [trace (extend-trace (get-in req keyseq))]
        (handler (assoc-in req keyseq trace))))))
+
 
 (defn wrap-logging
   "Middleware that logs at the start of the request and the end of the response.

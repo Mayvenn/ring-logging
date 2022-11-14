@@ -17,5 +17,23 @@
           handler (constantly {:status 200 :headers {} :body {:password "ABC123"}})
           config  (assoc test-config :censor-keys #{"aBc" "PASSWORD"})
           request {:headers {} :body {:abc "super-secret"}}
-          response ((wrap-logging default-handler (fake-logger log) config) request)]
+          response ((wrap-logging handler (fake-logger log) config) request)]
       (is (= @log "Finished {:abc \"█\"} {:password \"█\"}")))))
+
+
+(deftest structured-format-test
+  (testing "structured-req"
+    (let [req {:host "www.example.com"}]
+      (is (= (structured-req req)
+             {:domain  "http.ring.logging"
+              :event   "request/started"
+              :request req}))))
+  (testing "structured-resp"
+    (let [req {:host "www.example.com"}
+          resp {:host "www.example.com" :status 200}]
+      (is (= (structured-resp req resp)
+             {:domain  "http.ring.logging"
+              :event   "request/finished"
+              :request req
+              :response resp}))))
+  )
