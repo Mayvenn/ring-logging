@@ -157,6 +157,19 @@
    :txfm-resp   txfm-resp
    :format-resp json-resp})
 
+(def structured-inbound-config
+  {:censor-keys default-censor-keys
+   :txfm-req    txfm-inbound-req
+   :format-req  structured-req
+   :txfm-resp   txfm-resp
+   :format-resp structured-resp})
+
+(def structured-output-config
+  {:censor-keys default-censor-keys
+   :txfm-req    txfm-outbound-req
+   :format-req  structured-req
+   :txfm-resp   txfm-resp
+   :format-resp structured-resp})
 
 ;; Wrappers useful for logging requests and responses.
 
