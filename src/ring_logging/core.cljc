@@ -164,12 +164,16 @@
    :txfm-resp   txfm-resp
    :format-resp structured-resp})
 
-(def structured-output-config
+(def structured-outbound-config
   {:censor-keys default-censor-keys
    :txfm-req    txfm-outbound-req
    :format-req  structured-req
    :txfm-resp   txfm-resp
    :format-resp structured-resp})
+
+;; Aliased to prevent issues caused by relying on a previous typo
+(def structured-output-config
+  structured-outbound-config)
 
 ;; Wrappers useful for logging requests and responses.
 
