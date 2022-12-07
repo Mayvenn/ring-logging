@@ -66,7 +66,7 @@
   processes, usually via ring. Includes request-method, uri, params,
   remote-addr and the host and request-trace headers."
   [req]
-  (deep-select-keys req [:request-method :uri :params :remote-addr {:headers ["host" "request-trace"]}]))
+  (deep-select-keys req [:request-method :uri :params :query-params :remote-addr {:headers ["host" "request-trace"]}]))
 
 (defn txfm-outbound-req
   "A basic tranformation for requests this service makes to other
@@ -96,8 +96,9 @@
   "A map request format, which returns structured data"
   [req]
   {:domain  "http.ring.logging"
-   :event   "request/started"
-   :request req})
+   :name    :request/started
+   :request req
+   :data    {:request req}})
 
 (defn pr-resp
   "A basic response format, which just uses pr-str on the request and response."
@@ -115,9 +116,11 @@
   "A map response format, which returns structured data"
   [req resp]
   {:domain   "http.ring.logging"
-   :event    "request/finished"
+   :name     :request/finished
    :request  req
-   :response resp})
+   :response resp
+   :data     {:request  req
+              :response resp}})
 
 (def default-censor-keys #{"password" "token"})
 
@@ -276,8 +279,8 @@
    (fn [req]
      (let [normalized-censor-keys (->> censor-keys (map string/lower-case) set)
            txfmed-req (->> req txfm-req (censor-params normalized-censor-keys))]
-       (logger :info (format-req txfmed-req))
+       (logger :event (format-req txfmed-req))
        (when-let [resp (handler req)]
          (let [txfmed-resp (->> resp txfm-resp (censor-params normalized-censor-keys))]
-           (logger :info (format-resp txfmed-req txfmed-resp)))
+           (logger :event (format-resp txfmed-req txfmed-resp)))
          resp)))))
