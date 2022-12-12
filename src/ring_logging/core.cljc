@@ -95,10 +95,9 @@
 (defn structured-req
   "A map request format, which returns structured data"
   [req]
-  {:domain  "http.ring.logging"
-   :name    :request/started
-   :request req
-   :data    {:request req}})
+  {:event {:name    :http.request/started
+           :domain  "ring-logging"
+           :data    {:request req}}})
 
 (defn pr-resp
   "A basic response format, which just uses pr-str on the request and response."
@@ -115,12 +114,10 @@
 (defn structured-resp
   "A map response format, which returns structured data"
   [req resp]
-  {:domain   "http.ring.logging"
-   :name     :request/finished
-   :request  req
-   :response resp
-   :data     {:request  req
-              :response resp}})
+  {:event {:domain   "ring-logging"
+           :name     :http.request/finished
+           :data     {:request  req
+                      :response resp}}})
 
 (def default-censor-keys #{"password" "token"})
 
